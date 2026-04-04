@@ -12,6 +12,7 @@ import {
   InfoIcon,
   LoaderCircleIcon,
   TriangleAlertIcon,
+  XIcon,
 } from "lucide-react";
 
 import { cn } from "~/lib/utils";
@@ -329,6 +330,15 @@ function Toasts({ position = "top-right" }: { position: ToastPosition }) {
                     {toast.actionProps.children}
                   </Toast.Action>
                 )}
+                {toast.type !== "loading" && (
+                  <Toast.Close
+                    aria-label="Dismiss"
+                    className="shrink-0 cursor-pointer rounded-md p-1 text-muted-foreground opacity-60 transition-opacity hover:opacity-100"
+                    data-slot="toast-close"
+                  >
+                    <XIcon className="size-3.5" />
+                  </Toast.Close>
+                )}
               </Toast.Content>
             </Toast.Root>
           );
@@ -422,6 +432,15 @@ function AnchoredToasts() {
                         >
                           {toast.actionProps.children}
                         </Toast.Action>
+                      )}
+                      {toast.type !== "loading" && (
+                        <Toast.Close
+                          aria-label="Dismiss"
+                          className="shrink-0 cursor-pointer rounded-md p-1 text-muted-foreground opacity-60 transition-opacity hover:opacity-100"
+                          data-slot="toast-close"
+                        >
+                          <XIcon className="size-3.5" />
+                        </Toast.Close>
                       )}
                     </Toast.Content>
                   )}
