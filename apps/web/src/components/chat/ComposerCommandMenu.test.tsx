@@ -5,6 +5,23 @@ import { describe, expect, it } from "vite-plus/test";
 import { ComposerCommandMenu } from "./ComposerCommandMenu";
 
 describe("ComposerCommandMenu", () => {
+  it("describes slash-command loading as workspace skill discovery", () => {
+    const markup = renderToStaticMarkup(
+      <ComposerCommandMenu
+        items={[]}
+        resolvedTheme="dark"
+        isLoading
+        triggerKind="slash-command"
+        activeItemId={null}
+        onHighlightedItemChange={() => {}}
+        onSelect={() => {}}
+      />,
+    );
+
+    expect(markup).toContain("Searching workspace skills...");
+    expect(markup).not.toContain("Searching workspace files...");
+  });
+
   it("renders slash-command results as an attached composer drawer", () => {
     const markup = renderToStaticMarkup(
       <ComposerCommandMenu
