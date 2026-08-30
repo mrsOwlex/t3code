@@ -337,6 +337,10 @@ type CodexProviderClientInput = {
   readonly environment?: NodeJS.ProcessEnv;
 };
 
+type CodexProviderProbeInput = CodexProviderClientInput & {
+  readonly customModels?: ReadonlyArray<string>;
+};
+
 const openCodexProviderClient = Effect.fn("openCodexProviderClient")(function* (
   input: CodexProviderClientInput,
 ) {
@@ -388,14 +392,9 @@ const openCodexProviderClient = Effect.fn("openCodexProviderClient")(function* (
   return { client, initialize };
 });
 
-const probeCodexAppServerProvider = Effect.fn("probeCodexAppServerProvider")(function* (input: {
-  readonly binaryPath: string;
-  readonly homePath?: string;
-  readonly launchArgs?: string;
-  readonly cwd: string;
-  readonly customModels?: ReadonlyArray<string>;
-  readonly environment?: NodeJS.ProcessEnv;
-}) {
+const probeCodexAppServerProvider = Effect.fn("probeCodexAppServerProvider")(function* (
+  input: CodexProviderProbeInput,
+) {
   const { client, initialize } = yield* openCodexProviderClient(input);
 
   // Extract the version string after the first '/' in userAgent, up to the next space or the end
