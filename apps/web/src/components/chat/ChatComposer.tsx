@@ -1249,16 +1249,16 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
     () => collectComposerInlineTokens(prompt).some((token) => token.type === "skill"),
     [prompt],
   );
+  const shouldLoadWorkspaceSkillsForMenu =
+    composerTriggerKind === "skill" ||
+    (composerTriggerKind === "slash-command" && settings.showSkillsInSlashMenu);
   const workspaceEntries = useComposerPathSearch({
     environmentId,
     cwd: isPathTrigger ? gitCwd : null,
     query: isPathTrigger ? pathTriggerQuery : null,
   });
   const workspaceSkillsTarget =
-    providerWorkspaceContext !== null &&
-    (composerTriggerKind === "skill" ||
-      composerTriggerKind === "slash-command" ||
-      hasProviderSkillToken)
+    providerWorkspaceContext !== null && (shouldLoadWorkspaceSkillsForMenu || hasProviderSkillToken)
       ? {
           environmentId,
           input: {
@@ -1448,8 +1448,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
 
   const isComposerMenuLoading =
     (composerTriggerKind === "path" && pathTriggerQuery.length > 0 && workspaceEntries.isPending) ||
-    ((composerTriggerKind === "skill" || composerTriggerKind === "slash-command") &&
-      workspaceSkillsQuery.isPending);
+    (shouldLoadWorkspaceSkillsForMenu && workspaceSkillsQuery.isPending);
   const composerMenuEmptyState = useMemo(() => {
     if (composerTriggerKind === "skill") {
       return "No skills found. Try / to browse provider commands.";
