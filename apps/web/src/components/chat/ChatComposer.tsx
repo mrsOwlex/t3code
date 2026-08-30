@@ -1282,6 +1282,10 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
         : (workspaceSkillsQuery.data.skills ??
           selectedProviderStatus?.skills ??
           EMPTY_PROVIDER_SKILLS);
+  const composerEditorSkills =
+    providerSkills.length > 0
+      ? providerSkills
+      : (selectedProviderStatus?.skills ?? EMPTY_PROVIDER_SKILLS);
 
   const composerMenuItems = useMemo<ComposerCommandItem[]>(() => {
     if (!composerTrigger) return [];
@@ -3933,7 +3937,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                       ? composerTerminalContexts
                       : []
                   }
-                  skills={providerSkills}
+                  skills={composerEditorSkills}
                   {...(showMobilePendingAnswerActions ? { className: "max-sm:pb-11" } : {})}
                   onRemoveTerminalContext={removeComposerTerminalContextFromDraft}
                   onChange={onPromptChange}

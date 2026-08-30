@@ -111,6 +111,10 @@ export function useComposerCommandMenu({
         : (workspaceSkillsQuery.data.skills ??
           selectedProviderStatus?.skills ??
           EMPTY_PROVIDER_SKILLS);
+  const editorSkills =
+    providerSkills.length > 0
+      ? providerSkills
+      : (selectedProviderStatus?.skills ?? EMPTY_PROVIDER_SKILLS);
 
   const items = useMemo<ComposerCommandItem[]>(() => {
     if (!trigger) return [];
@@ -330,6 +334,7 @@ export function useComposerCommandMenu({
     trigger,
     items,
     providerSkills,
+    editorSkills,
     isLoading:
       (trigger?.kind === "path" && trigger.query.length > 0 && pathSearch.isPending) ||
       ((trigger?.kind === "skill" || trigger?.kind === "slash-command") &&
