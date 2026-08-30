@@ -9,6 +9,7 @@ export const makeProviderRegistryMock = (
   providers: ReadonlyArray<ServerProvider> = [],
 ): ProviderRegistryShape => ({
   getProviders: Effect.succeed(providers),
+  getWorkspaceSkills: () => Effect.succeed(null),
   refresh: () => Effect.succeed(providers),
   refreshInstance: () => Effect.succeed(providers),
   getProviderMaintenanceCapabilitiesForInstance: (_instanceId, provider) =>

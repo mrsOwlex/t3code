@@ -7280,6 +7280,13 @@ function ChatViewContent(props: ChatViewProps) {
                             interactionMode={interactionMode}
                             lockedProvider={lockedProvider}
                             providerStatuses={providerStatuses as ServerProvider[]}
+                            providerWorkspaceContext={
+                              routeKind === "server"
+                                ? { _tag: "thread", threadId }
+                                : activeProject
+                                  ? { _tag: "project", projectId: activeProject.id }
+                                  : null
+                            }
                             activeProjectDefaultModelSelection={
                               activeProject?.defaultModelSelection
                             }

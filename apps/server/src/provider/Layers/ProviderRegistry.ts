@@ -522,6 +522,17 @@ export const ProviderRegistryLive = Layer.effect(
       );
     });
 
+    const getWorkspaceSkills = Effect.fn("getWorkspaceSkills")(function* (input: {
+      readonly instanceId: ProviderInstanceId;
+      readonly cwd: string;
+    }) {
+      const instance = yield* instanceRegistry.getInstance(input.instanceId);
+      if (instance?.loadWorkspaceSkills === undefined) {
+        return null;
+      }
+      return yield* instance.loadWorkspaceSkills(input.cwd);
+    });
+
     /**
      * Diff the aggregator's live-source set against the current
      * `ProviderInstanceRegistry` and:
@@ -724,6 +735,7 @@ export const ProviderRegistryLive = Layer.effect(
         refresh(provider).pipe(Effect.catchCause(recoverRefreshFailure)),
       refreshInstance: (instanceId: ProviderInstanceId) =>
         refreshInstance(instanceId).pipe(Effect.catchCause(recoverRefreshFailure)),
+      getWorkspaceSkills,
       getProviderMaintenanceCapabilitiesForInstance,
       setProviderMaintenanceActionState,
       get streamChanges() {

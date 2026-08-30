@@ -745,6 +745,10 @@ export function createServerEnvironmentAtoms<R, E>(
     updateStateAtom,
     settingsValueAtom,
     providersValueAtom,
+    workspaceSkills: createEnvironmentRpcQueryAtomFamily(runtime, {
+      label: "environment-data:provider:workspace-skills",
+      tag: WS_METHODS.providerGetWorkspaceSkills,
+    }),
     traceDiagnostics: createEnvironmentRpcQueryAtomFamily(runtime, {
       label: "environment-data:server:trace-diagnostics",
       tag: WS_METHODS.serverGetTraceDiagnostics,

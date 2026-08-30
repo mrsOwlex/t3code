@@ -53,6 +53,8 @@ T3 Code looks for Claude skills in the Claude config directory's `skills` folder
 
 If the same skill name exists in more than one folder, the later folder wins.
 
+The skill picker uses the active project. In an existing thread, it uses that thread's worktree.
+
 ## I Want Work And Personal Claude Accounts
 
 Use a different Claude config directory for each account.

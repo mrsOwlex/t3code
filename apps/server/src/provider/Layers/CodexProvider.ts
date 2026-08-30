@@ -318,14 +318,28 @@ export function buildCodexInitializeParams(): CodexSchema.V1InitializeParams {
   };
 }
 
-const probeCodexAppServerProvider = Effect.fn("probeCodexAppServerProvider")(function* (input: {
+const CODEX_PROVIDER_PROBE_INITIALIZE_PARAMS = {
+  clientInfo: {
+    name: "t3code_desktop",
+    title: "T3 Code Desktop",
+    version: "0.1.0",
+  },
+  capabilities: {
+    experimentalApi: true,
+  },
+} satisfies CodexSchema.V1InitializeParams;
+
+type CodexProviderClientInput = {
   readonly binaryPath: string;
   readonly homePath?: string;
   readonly launchArgs?: string;
   readonly cwd: string;
-  readonly customModels?: ReadonlyArray<string>;
   readonly environment?: NodeJS.ProcessEnv;
-}) {
+};
+
+const openCodexProviderClient = Effect.fn("openCodexProviderClient")(function* (
+  input: CodexProviderClientInput,
+) {
   // `~` is not shell-expanded when env vars are set via `child_process.spawn`,
   // so `CODEX_HOME=~/.codex_work` would reach codex verbatim and trip
   // "CODEX_HOME points to '~/.codex_work', but that path does not exist".
@@ -368,17 +382,21 @@ const probeCodexAppServerProvider = Effect.fn("probeCodexAppServerProvider")(fun
     Effect.provide(clientContext),
   );
 
-  const initialize = yield* client.request("initialize", {
-    clientInfo: {
-      name: "t3code_desktop",
-      title: "T3 Code Desktop",
-      version: "0.1.0",
-    },
-    capabilities: {
-      experimentalApi: true,
-    },
-  });
+  const initialize = yield* client.request("initialize", CODEX_PROVIDER_PROBE_INITIALIZE_PARAMS);
   yield* client.notify("initialized", undefined);
+
+  return { client, initialize };
+});
+
+const probeCodexAppServerProvider = Effect.fn("probeCodexAppServerProvider")(function* (input: {
+  readonly binaryPath: string;
+  readonly homePath?: string;
+  readonly launchArgs?: string;
+  readonly cwd: string;
+  readonly customModels?: ReadonlyArray<string>;
+  readonly environment?: NodeJS.ProcessEnv;
+}) {
+  const { client, initialize } = yield* openCodexProviderClient(input);
 
   // Extract the version string after the first '/' in userAgent, up to the next space or the end
   const versionMatch = initialize.userAgent.match(/\/([^\s]+)/);
@@ -413,6 +431,23 @@ const probeCodexAppServerProvider = Effect.fn("probeCodexAppServerProvider")(fun
     skills: parseCodexSkillsListResponse(skillsResponse, input.cwd),
   } satisfies CodexAppServerProviderSnapshot;
 });
+
+export const loadCodexWorkspaceSkills = Effect.fn("loadCodexWorkspaceSkills")(
+  function* (codexSettings: CodexSettings, cwd: string, environment?: NodeJS.ProcessEnv) {
+    const resolvedEnvironment = environment ?? process.env;
+    const { client } = yield* openCodexProviderClient({
+      binaryPath: codexSettings.binaryPath,
+      homePath: codexSettings.homePath,
+      launchArgs: resolveCodexLaunchArgs(codexSettings.launchArgs, resolvedEnvironment),
+      cwd,
+      environment: resolvedEnvironment,
+    });
+    const response = yield* client.request("skills/list", { cwds: [cwd] });
+    return parseCodexSkillsListResponse(response, cwd);
+  },
+  Effect.scoped,
+  Effect.timeout(Duration.millis(AUTH_PROBE_TIMEOUT_MS)),
+);
 
 const emptyCodexModelsFromSettings = (codexSettings: CodexSettings): ServerProvider["models"] => {
   const models = new Set<string>();

@@ -48,6 +48,9 @@ import {
   ProjectSearchContentsError,
   ProjectSearchEntriesError,
   ProjectWriteFileError,
+  ProviderWorkspaceContextNotFoundError,
+  ProviderWorkspaceContextResolutionError,
+  type ProviderWorkspaceSkillsInput,
   ProviderUploadFeedbackError,
   RelayClientInstallFailedError,
   type RelayClientInstallProgressEvent,
@@ -1211,6 +1214,59 @@ const makeWsRpcLayer = (
         };
       });
 
+      const resolveProviderWorkspaceCwd = Effect.fn("resolveProviderWorkspaceCwd")(function* (
+        input: ProviderWorkspaceSkillsInput,
+      ) {
+        if (input.context._tag === "project") {
+          const project = yield* projectionSnapshotQuery
+            .getProjectShellById(input.context.projectId)
+            .pipe(
+              Effect.mapError(
+                (cause) =>
+                  new ProviderWorkspaceContextResolutionError({
+                    context: input.context,
+                    cause,
+                  }),
+              ),
+            );
+          if (Option.isNone(project)) {
+            return yield* new ProviderWorkspaceContextNotFoundError({ context: input.context });
+          }
+          return project.value.workspaceRoot;
+        }
+
+        const thread = yield* projectionSnapshotQuery
+          .getThreadShellById(input.context.threadId)
+          .pipe(
+            Effect.mapError(
+              (cause) =>
+                new ProviderWorkspaceContextResolutionError({
+                  context: input.context,
+                  cause,
+                }),
+            ),
+          );
+        if (Option.isNone(thread)) {
+          return yield* new ProviderWorkspaceContextNotFoundError({ context: input.context });
+        }
+
+        const project = yield* projectionSnapshotQuery
+          .getProjectShellById(thread.value.projectId)
+          .pipe(
+            Effect.mapError(
+              (cause) =>
+                new ProviderWorkspaceContextResolutionError({
+                  context: input.context,
+                  cause,
+                }),
+            ),
+          );
+        if (Option.isNone(project)) {
+          return yield* new ProviderWorkspaceContextNotFoundError({ context: input.context });
+        }
+        return thread.value.worktreePath ?? project.value.workspaceRoot;
+      });
+
       const refreshGitStatus = (cwd: string) =>
         vcsStatusBroadcaster
           .refreshStatus(cwd)
@@ -1646,6 +1702,19 @@ const makeWsRpcLayer = (
                   }),
               ),
             ),
+            { "rpc.aggregate": "provider" },
+          ),
+        [WS_METHODS.providerGetWorkspaceSkills]: (input) =>
+          observeRpcEffect(
+            WS_METHODS.providerGetWorkspaceSkills,
+            Effect.gen(function* () {
+              const cwd = yield* resolveProviderWorkspaceCwd(input);
+              const skills = yield* providerRegistry.getWorkspaceSkills({
+                instanceId: input.instanceId,
+                cwd,
+              });
+              return { skills };
+            }),
             { "rpc.aggregate": "provider" },
           ),
         [WS_METHODS.serverUpdateProvider]: (input) =>

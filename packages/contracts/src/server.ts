@@ -96,6 +96,60 @@ export const ServerProviderSkill = Schema.Struct({
 });
 export type ServerProviderSkill = typeof ServerProviderSkill.Type;
 
+export const ProviderWorkspaceContext = Schema.Union([
+  Schema.TaggedStruct("project", { projectId: ProjectId }),
+  Schema.TaggedStruct("thread", { threadId: ThreadId }),
+]);
+export type ProviderWorkspaceContext = typeof ProviderWorkspaceContext.Type;
+
+export const ProviderWorkspaceSkillsInput = Schema.Struct({
+  instanceId: ProviderInstanceId,
+  context: ProviderWorkspaceContext,
+});
+export type ProviderWorkspaceSkillsInput = typeof ProviderWorkspaceSkillsInput.Type;
+
+export const ProviderWorkspaceSkillsResult = Schema.Struct({
+  // `null` means the provider does not expose workspace-scoped discovery.
+  // Clients then retain the skills from its ordinary provider snapshot.
+  skills: Schema.NullOr(Schema.Array(ServerProviderSkill)),
+});
+export type ProviderWorkspaceSkillsResult = typeof ProviderWorkspaceSkillsResult.Type;
+
+export class ProviderWorkspaceContextNotFoundError extends Schema.TaggedErrorClass<ProviderWorkspaceContextNotFoundError>()(
+  "ProviderWorkspaceContextNotFoundError",
+  {
+    context: ProviderWorkspaceContext,
+  },
+) {
+  override get message(): string {
+    return "Provider workspace context was not found.";
+  }
+}
+
+export class ProviderWorkspaceContextResolutionError extends Schema.TaggedErrorClass<ProviderWorkspaceContextResolutionError>()(
+  "ProviderWorkspaceContextResolutionError",
+  {
+    context: ProviderWorkspaceContext,
+    cause: Schema.Defect(),
+  },
+) {
+  override get message(): string {
+    return "Failed to resolve the provider workspace context.";
+  }
+}
+
+export class ProviderWorkspaceSkillsError extends Schema.TaggedErrorClass<ProviderWorkspaceSkillsError>()(
+  "ProviderWorkspaceSkillsError",
+  {
+    instanceId: ProviderInstanceId,
+    cause: Schema.Defect(),
+  },
+) {
+  override get message(): string {
+    return `Failed to load workspace skills for ${this.instanceId}.`;
+  }
+}
+
 /**
  * Availability of a configured provider instance from the runtime's POV.
  *

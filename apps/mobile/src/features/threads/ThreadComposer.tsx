@@ -313,6 +313,7 @@ export const ThreadComposer = memo(function ThreadComposer(props: ThreadComposer
     draftMessage: props.draftMessage,
     environmentId: props.environmentId,
     projectCwd: props.projectCwd,
+    workspaceContext: { _tag: "thread", threadId: props.selectedThread.id },
     selectedProviderStatus,
     hasThread: true,
     onChangeDraftMessage: props.onChangeDraftMessage,

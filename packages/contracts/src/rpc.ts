@@ -165,6 +165,11 @@ import {
   PreviewAutomationStreamEvent,
 } from "./previewAutomation.ts";
 import {
+  ProviderWorkspaceContextNotFoundError,
+  ProviderWorkspaceContextResolutionError,
+  ProviderWorkspaceSkillsError,
+  ProviderWorkspaceSkillsInput,
+  ProviderWorkspaceSkillsResult,
   ServerConfigStreamEvent,
   ServerConfig,
   ServerProviderUpdateError,
@@ -228,6 +233,7 @@ export const WS_METHODS = {
 
   // Provider methods
   providerUploadFeedback: "provider.uploadFeedback",
+  providerGetWorkspaceSkills: "provider.getWorkspaceSkills",
 
   // VCS methods
   vcsPull: "vcs.pull",
@@ -700,6 +706,17 @@ export const WsProviderUploadFeedbackRpc = Rpc.make(WS_METHODS.providerUploadFee
   error: Schema.Union([ProviderUploadFeedbackError, EnvironmentAuthorizationError]),
 });
 
+export const WsProviderGetWorkspaceSkillsRpc = Rpc.make(WS_METHODS.providerGetWorkspaceSkills, {
+  payload: ProviderWorkspaceSkillsInput,
+  success: ProviderWorkspaceSkillsResult,
+  error: Schema.Union([
+    ProviderWorkspaceContextNotFoundError,
+    ProviderWorkspaceContextResolutionError,
+    ProviderWorkspaceSkillsError,
+    EnvironmentAuthorizationError,
+  ]),
+});
+
 export const WsSubscribeVcsStatusRpc = Rpc.make(WS_METHODS.subscribeVcsStatus, {
   payload: VcsStatusInput,
   success: VcsStatusStreamEvent,
@@ -1081,6 +1098,7 @@ export const WsRpcGroup = RpcGroup.make(
   WsAttachmentsCreateUploadUrlRpc,
   WsAttachmentsDeleteRpc,
   WsProviderUploadFeedbackRpc,
+  WsProviderGetWorkspaceSkillsRpc,
   WsSubscribeVcsStatusRpc,
   WsVcsPullRpc,
   WsVcsRefreshStatusRpc,

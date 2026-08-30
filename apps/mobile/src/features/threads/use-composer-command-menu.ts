@@ -1,4 +1,10 @@
-import type { EnvironmentId, ProviderInteractionMode, ServerProvider } from "@t3tools/contracts";
+import type {
+  EnvironmentId,
+  ProviderInteractionMode,
+  ProviderWorkspaceContext,
+  ServerProvider,
+  ServerProviderSkill,
+} from "@t3tools/contracts";
 import {
   detectComposerTrigger,
   replaceTextRange,
@@ -12,15 +18,20 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { ComposerEditorSelection } from "../../components/ComposerEditor";
+import { useEnvironmentQuery } from "../../state/query";
+import { serverEnvironment } from "../../state/server";
 import { useComposerPathSearch } from "../../state/use-composer-path-search";
 import type { ComposerCommandItem } from "./ComposerCommandPopover";
 import { matchesSlashSkillQuery } from "./composerSlashSkillSearch";
+
+const EMPTY_PROVIDER_SKILLS: ReadonlyArray<ServerProviderSkill> = [];
 
 /** Shared autocomplete for thread composers and unsent new-task drafts. */
 export function useComposerCommandMenu({
   draftMessage,
   environmentId,
   projectCwd,
+  workspaceContext,
   selectedProviderStatus,
   hasThread,
   enabled = true,
@@ -30,6 +41,7 @@ export function useComposerCommandMenu({
   readonly draftMessage: string;
   readonly environmentId: EnvironmentId | null;
   readonly projectCwd: string | null;
+  readonly workspaceContext: ProviderWorkspaceContext | null;
   readonly selectedProviderStatus: ServerProvider | null;
   readonly hasThread: boolean;
   readonly enabled?: boolean;
@@ -66,6 +78,34 @@ export function useComposerCommandMenu({
     cwd: trigger?.kind === "path" ? projectCwd : null,
     query: trigger?.kind === "path" ? trigger.query : null,
   });
+  const workspaceSkillsTarget =
+    environmentId !== null &&
+    selectedProviderStatus !== null &&
+    workspaceContext !== null &&
+    (trigger?.kind === "skill" || trigger?.kind === "slash-command")
+      ? {
+          environmentId,
+          input: {
+            instanceId: selectedProviderStatus.instanceId,
+            context: workspaceContext,
+          },
+        }
+      : null;
+  const workspaceSkillsQuery = useEnvironmentQuery(
+    workspaceSkillsTarget === null
+      ? null
+      : serverEnvironment.workspaceSkills(workspaceSkillsTarget),
+  );
+  const providerSkills =
+    workspaceSkillsTarget === null
+      ? (selectedProviderStatus?.skills ?? EMPTY_PROVIDER_SKILLS)
+      : workspaceSkillsQuery.data === null
+        ? workspaceSkillsQuery.error === null
+          ? EMPTY_PROVIDER_SKILLS
+          : (selectedProviderStatus?.skills ?? EMPTY_PROVIDER_SKILLS)
+        : (workspaceSkillsQuery.data.skills ??
+          selectedProviderStatus?.skills ??
+          EMPTY_PROVIDER_SKILLS);
 
   const items = useMemo<ComposerCommandItem[]>(() => {
     if (!trigger) return [];
@@ -121,7 +161,7 @@ export function useComposerCommandMenu({
         });
       }
 
-      const skillItems = (selectedProviderStatus?.skills ?? [])
+      const skillItems = providerSkills
         .filter((skill) => matchesSlashSkillQuery(skill, q))
         .map((skill) => ({
           id: `skill:${skill.name}`,
@@ -135,7 +175,7 @@ export function useComposerCommandMenu({
     }
 
     if (trigger.kind === "skill") {
-      const enabledSkills = (selectedProviderStatus?.skills ?? []).filter((skill) => skill.enabled);
+      const enabledSkills = providerSkills.filter((skill) => skill.enabled);
       const normalizedQuery = normalizeSearchQuery(trigger.query, {
         trimLeadingPattern: /^\$+/,
       });
@@ -232,7 +272,14 @@ export function useComposerCommandMenu({
     }
 
     return [];
-  }, [hasThread, onUpdateInteractionMode, pathSearch.entries, selectedProviderStatus, trigger]);
+  }, [
+    hasThread,
+    onUpdateInteractionMode,
+    pathSearch.entries,
+    providerSkills,
+    selectedProviderStatus,
+    trigger,
+  ]);
 
   const onSelect = useCallback(
     (item: ComposerCommandItem) => {
@@ -277,7 +324,7 @@ export function useComposerCommandMenu({
     onSelectionChange,
     trigger,
     items,
-    isLoading: pathSearch.isPending,
+    isLoading: pathSearch.isPending || workspaceSkillsQuery.isPending,
     onSelect,
   };
 }
