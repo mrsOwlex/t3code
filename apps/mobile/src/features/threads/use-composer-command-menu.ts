@@ -330,7 +330,10 @@ export function useComposerCommandMenu({
     trigger,
     items,
     providerSkills,
-    isLoading: pathSearch.isPending || workspaceSkillsQuery.isPending,
+    isLoading:
+      (trigger?.kind === "path" && trigger.query.length > 0 && pathSearch.isPending) ||
+      ((trigger?.kind === "skill" || trigger?.kind === "slash-command") &&
+        workspaceSkillsQuery.isPending),
     onSelect,
   };
 }
