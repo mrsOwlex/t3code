@@ -53,7 +53,9 @@ T3 Code looks for Claude skills in the Claude config directory's `skills` folder
 
 If the same skill name exists in more than one folder, the later folder wins.
 
-The skill picker uses the active project. In an existing thread, it uses that thread's worktree.
+The skill picker uses the active project. A new task targeting an existing worktree uses that
+worktree. Existing threads also use their worktree when one is present and otherwise fall back to
+the project root.
 
 ## I Want Work And Personal Claude Accounts
 

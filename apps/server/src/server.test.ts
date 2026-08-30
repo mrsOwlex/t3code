@@ -4592,7 +4592,7 @@ it.layer(NodeServices.layer)("server router seam", (it) => {
     }).pipe(Effect.provide(NodeHttpServer.layerTest)),
   );
 
-  it.effect("loads provider skills from the active project or thread worktree", () =>
+  it.effect("loads provider skills from a project, selected worktree, or thread", () =>
     Effect.gen(function* () {
       const projectId = ProjectId.make("project-workspace-skills");
       const threadId = ThreadId.make("thread-workspace-skills");
@@ -4647,16 +4647,20 @@ it.layer(NodeServices.layer)("server router seam", (it) => {
             }),
             client[WS_METHODS.providerGetWorkspaceSkills]({
               instanceId,
+              context: { _tag: "worktree", projectId, worktreePath },
+            }),
+            client[WS_METHODS.providerGetWorkspaceSkills]({
+              instanceId,
               context: { _tag: "thread", threadId },
             }),
           ]),
         ),
       );
 
-      assert.deepEqual(requestedCwds, [workspaceRoot, worktreePath]);
+      assert.deepEqual(requestedCwds, [workspaceRoot, worktreePath, worktreePath]);
       assert.deepEqual(
         responses.map(({ skills }) => skills?.[0]?.name),
-        ["project-skill", "worktree-skill"],
+        ["project-skill", "worktree-skill", "worktree-skill"],
       );
     }).pipe(Effect.provide(NodeHttpServer.layerTest)),
   );

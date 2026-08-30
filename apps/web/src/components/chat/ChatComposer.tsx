@@ -22,6 +22,7 @@ import {
 } from "@t3tools/contracts";
 import type { EnvironmentConnectionPresentation } from "@t3tools/client-runtime/connection";
 import { serializeComposerFileLink } from "@t3tools/shared/composerTrigger";
+import { collectComposerInlineTokens } from "@t3tools/shared/composerInlineTokens";
 import { createModelSelection, normalizeModelSlug } from "@t3tools/shared/model";
 import {
   memo,
@@ -1244,6 +1245,10 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
   const composerTriggerKind = composerTrigger?.kind ?? null;
   const pathTriggerQuery = composerTrigger?.kind === "path" ? composerTrigger.query : "";
   const isPathTrigger = composerTriggerKind === "path";
+  const hasProviderSkillToken = useMemo(
+    () => collectComposerInlineTokens(prompt).some((token) => token.type === "skill"),
+    [prompt],
+  );
   const workspaceEntries = useComposerPathSearch({
     environmentId,
     cwd: isPathTrigger ? gitCwd : null,
@@ -1251,7 +1256,9 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
   });
   const workspaceSkillsTarget =
     providerWorkspaceContext !== null &&
-    (composerTriggerKind === "skill" || composerTriggerKind === "slash-command")
+    (composerTriggerKind === "skill" ||
+      composerTriggerKind === "slash-command" ||
+      hasProviderSkillToken)
       ? {
           environmentId,
           input: {
@@ -3925,7 +3932,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                       ? composerTerminalContexts
                       : []
                   }
-                  skills={selectedProviderStatus?.skills ?? []}
+                  skills={providerSkills}
                   {...(showMobilePendingAnswerActions ? { className: "max-sm:pb-11" } : {})}
                   onRemoveTerminalContext={removeComposerTerminalContextFromDraft}
                   onChange={onPromptChange}

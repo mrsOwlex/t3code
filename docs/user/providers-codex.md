@@ -42,8 +42,10 @@ parent agent's settings.
 
 ## Where Codex Skills Are Loaded
 
-The skill picker loads Codex skills for the active project. In an existing thread, it uses that
-thread's worktree so project-specific skills match the code the agent is working on.
+The skill picker loads Codex skills for the active project. A new task targeting an existing
+worktree uses that worktree. Existing threads also use their worktree when one is present and
+otherwise fall back to the project root, so project-specific skills match the code the agent is
+working on.
 
 ## Approve access to other apps
 

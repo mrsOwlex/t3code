@@ -9,6 +9,7 @@ import {
   type ProjectScript,
   type ProjectId,
   type ProviderApprovalDecision,
+  type ProviderWorkspaceContext,
   type PreviewAnnotationPayload,
   ProviderInstanceId,
   type ServerProvider,
@@ -1829,6 +1830,15 @@ function ChatViewContent(props: ChatViewProps) {
     [activeThread?.environmentId, activeThread?.projectId],
   );
   const activeProject = useProject(activeProjectRef);
+  const providerWorkspaceContext = useMemo<ProviderWorkspaceContext | null>(
+    () =>
+      isServerThread
+        ? { _tag: "thread", threadId }
+        : activeProject
+          ? { _tag: "project", projectId: activeProject.id }
+          : null,
+    [activeProject?.id, isServerThread, threadId],
+  );
   const handleNewThreadInActiveProject = useCallback(() => {
     startNewThreadForProject(activeProjectRef, handleNewThread);
   }, [activeProjectRef, handleNewThread]);
@@ -7280,13 +7290,7 @@ function ChatViewContent(props: ChatViewProps) {
                             interactionMode={interactionMode}
                             lockedProvider={lockedProvider}
                             providerStatuses={providerStatuses as ServerProvider[]}
-                            providerWorkspaceContext={
-                              routeKind === "server"
-                                ? { _tag: "thread", threadId }
-                                : activeProject
-                                  ? { _tag: "project", projectId: activeProject.id }
-                                  : null
-                            }
+                            providerWorkspaceContext={providerWorkspaceContext}
                             activeProjectDefaultModelSelection={
                               activeProject?.defaultModelSelection
                             }

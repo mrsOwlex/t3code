@@ -1217,7 +1217,7 @@ const makeWsRpcLayer = (
       const resolveProviderWorkspaceCwd = Effect.fn("resolveProviderWorkspaceCwd")(function* (
         input: ProviderWorkspaceSkillsInput,
       ) {
-        if (input.context._tag === "project") {
+        if (input.context._tag !== "thread") {
           const project = yield* projectionSnapshotQuery
             .getProjectShellById(input.context.projectId)
             .pipe(
@@ -1232,7 +1232,9 @@ const makeWsRpcLayer = (
           if (Option.isNone(project)) {
             return yield* new ProviderWorkspaceContextNotFoundError({ context: input.context });
           }
-          return project.value.workspaceRoot;
+          return input.context._tag === "worktree"
+            ? input.context.worktreePath
+            : project.value.workspaceRoot;
         }
 
         const thread = yield* projectionSnapshotQuery

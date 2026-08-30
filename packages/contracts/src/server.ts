@@ -98,6 +98,10 @@ export type ServerProviderSkill = typeof ServerProviderSkill.Type;
 
 export const ProviderWorkspaceContext = Schema.Union([
   Schema.TaggedStruct("project", { projectId: ProjectId }),
+  Schema.TaggedStruct("worktree", {
+    projectId: ProjectId,
+    worktreePath: TrimmedNonEmptyString,
+  }),
   Schema.TaggedStruct("thread", { threadId: ThreadId }),
 ]);
 export type ProviderWorkspaceContext = typeof ProviderWorkspaceContext.Type;

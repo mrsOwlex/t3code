@@ -1,11 +1,12 @@
 import { NativeHeaderToolbar, NativeStackScreenOptions } from "../../native/StackHeader";
+import type { ProviderWorkspaceContext } from "@t3tools/contracts";
 import {
   StackActions,
   useFocusEffect,
   useNavigation,
   usePreventRemove,
 } from "@react-navigation/native";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Platform, Pressable, ScrollView, View } from "react-native";
 import {
   KeyboardController,
@@ -218,6 +219,19 @@ export function NewTaskDraftScreen(props: {
   const isIncomingShareTransferPending = Boolean(
     incomingShare && cancelledIncomingShareId !== props.incomingShareId,
   );
+  const providerWorkspaceContext = useMemo<ProviderWorkspaceContext | null>(
+    () =>
+      selectedProject === null
+        ? null
+        : flow.workspaceMode === "local" && flow.selectedWorktreePath !== null
+          ? {
+              _tag: "worktree",
+              projectId: selectedProject.id,
+              worktreePath: flow.selectedWorktreePath,
+            }
+          : { _tag: "project", projectId: selectedProject.id },
+    [flow.selectedWorktreePath, flow.workspaceMode, selectedProject?.id],
+  );
   const composerMenu = useComposerCommandMenu({
     draftMessage: flow.prompt,
     environmentId: selectedProject?.environmentId ?? null,
@@ -225,8 +239,7 @@ export function NewTaskDraftScreen(props: {
       (flow.workspaceMode === "worktree"
         ? selectedProject?.workspaceRoot
         : (flow.selectedWorktreePath ?? selectedProject?.workspaceRoot)) || null,
-    workspaceContext:
-      selectedProject === null ? null : { _tag: "project", projectId: selectedProject.id },
+    workspaceContext: providerWorkspaceContext,
     selectedProviderStatus: flow.selectedProviderStatus,
     hasThread: false,
     enabled: isComposerFocused && !isIncomingShareTransferPending,
@@ -845,7 +858,7 @@ export function NewTaskDraftScreen(props: {
       multiline
       scrollEnabled
       value={flow.prompt}
-      skills={flow.selectedProviderStatus?.skills ?? []}
+      skills={composerMenu.providerSkills}
       selection={composerMenu.selection}
       onChangeText={flow.setPrompt}
       onSelectionChange={composerMenu.onSelectionChange}

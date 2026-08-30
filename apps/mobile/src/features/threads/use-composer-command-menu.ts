@@ -10,6 +10,7 @@ import {
   replaceTextRange,
   serializeComposerFileLink,
 } from "@t3tools/shared/composerTrigger";
+import { collectComposerInlineTokens } from "@t3tools/shared/composerInlineTokens";
 import {
   insertRankedSearchResult,
   normalizeSearchQuery,
@@ -78,11 +79,15 @@ export function useComposerCommandMenu({
     cwd: trigger?.kind === "path" ? projectCwd : null,
     query: trigger?.kind === "path" ? trigger.query : null,
   });
+  const hasProviderSkillToken = useMemo(
+    () => collectComposerInlineTokens(draftMessage).some((token) => token.type === "skill"),
+    [draftMessage],
+  );
   const workspaceSkillsTarget =
     environmentId !== null &&
     selectedProviderStatus !== null &&
     workspaceContext !== null &&
-    (trigger?.kind === "skill" || trigger?.kind === "slash-command")
+    (trigger?.kind === "skill" || trigger?.kind === "slash-command" || hasProviderSkillToken)
       ? {
           environmentId,
           input: {
@@ -324,6 +329,7 @@ export function useComposerCommandMenu({
     onSelectionChange,
     trigger,
     items,
+    providerSkills,
     isLoading: pathSearch.isPending || workspaceSkillsQuery.isPending,
     onSelect,
   };
