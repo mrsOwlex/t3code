@@ -231,6 +231,7 @@ export const CodexDriver: ProviderDriver<CodexSettings, CodexDriverEnv> = {
             (cause) =>
               new ProviderWorkspaceSkillsError({
                 instanceId,
+                cwd: workspaceCwd,
                 cause,
               }),
           ),

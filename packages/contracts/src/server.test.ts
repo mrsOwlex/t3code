@@ -6,7 +6,9 @@ import {
   ServerProvider,
   ServerProviders,
   ServerUpsertKeybindingResult,
+  ProviderWorkspaceSkillsError,
 } from "./server.ts";
+import { ProviderInstanceId } from "./providerInstance.ts";
 
 const decodeServerProvider = Schema.decodeUnknownSync(ServerProvider);
 const decodeServerProviders = Schema.decodeUnknownSync(ServerProviders);
@@ -24,6 +26,20 @@ const baseProviderSnapshot = {
   checkedAt: "2026-04-10T00:00:00.000Z",
   models: [],
 };
+
+describe("ProviderWorkspaceSkillsError", () => {
+  it("identifies the workspace that failed", () => {
+    const error = new ProviderWorkspaceSkillsError({
+      instanceId: ProviderInstanceId.make("codex"),
+      cwd: "/tmp/example-worktree",
+      cause: new Error("skills/list failed"),
+    });
+
+    expect(error.message).toBe(
+      "Failed to load workspace skills for codex in '/tmp/example-worktree'.",
+    );
+  });
+});
 
 describe("ServerProvider", () => {
   it("defaults capability arrays when decoding provider snapshots", () => {

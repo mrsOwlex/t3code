@@ -146,11 +146,12 @@ export class ProviderWorkspaceSkillsError extends Schema.TaggedErrorClass<Provid
   "ProviderWorkspaceSkillsError",
   {
     instanceId: ProviderInstanceId,
+    cwd: TrimmedNonEmptyString,
     cause: Schema.Defect(),
   },
 ) {
   override get message(): string {
-    return `Failed to load workspace skills for ${this.instanceId}.`;
+    return `Failed to load workspace skills for ${this.instanceId} in '${this.cwd}'.`;
   }
 }
 
