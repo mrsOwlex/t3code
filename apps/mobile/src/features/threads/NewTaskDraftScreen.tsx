@@ -1,10 +1,12 @@
 import { NativeHeaderToolbar, NativeStackScreenOptions } from "../../native/StackHeader";
 import type { ProviderWorkspaceContext } from "@t3tools/contracts";
 import {
+  CommonActions,
   StackActions,
   useFocusEffect,
   useNavigation,
   usePreventRemove,
+  type NavigationAction,
 } from "@react-navigation/native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Platform, Pressable, ScrollView, View } from "react-native";
@@ -38,6 +40,7 @@ import { ProviderIcon } from "../../components/ProviderIcon";
 import { SymbolView } from "../../components/AppSymbol";
 import { AppText as Text } from "../../components/AppText";
 import { COMPOSER_LAYOUT_TRANSITION, ComposerSurface } from "./ThreadComposer";
+import { ShimmeringWorkContent } from "./thread-work-log";
 import { ComposerCommandPopover } from "./ComposerCommandPopover";
 import { useComposerCommandMenu } from "./use-composer-command-menu";
 import {
@@ -213,6 +216,9 @@ export function NewTaskDraftScreen(props: {
   const [isCancellingShareImport, setIsCancellingShareImport] = useState(false);
   const [cancelledIncomingShareId, setCancelledIncomingShareId] = useState<string | null>(null);
   const [isReturningToProjectPicker, setIsReturningToProjectPicker] = useState(false);
+  const [submitNavigationAction, setSubmitNavigationAction] = useState<NavigationAction | null>(
+    null,
+  );
   const [shareImportAttempt, setShareImportAttempt] = useState(0);
   const startedShareImportKeyRef = useRef<string | null>(null);
   const cancellingShareImportKeyRef = useRef<string | null>(null);
@@ -290,12 +296,23 @@ export function NewTaskDraftScreen(props: {
     voiceInput.elapsedSeconds,
   );
   const isVoiceInputPresented = voicePresentation.statusLabel !== null;
-  usePreventRemove(
+  const preventRemove =
     (isIncomingShareTransferPending && !isProjectPickerReturnActive) ||
-      isCancellingShareImport ||
-      flow.submitting,
-    () => undefined,
-  );
+    isCancellingShareImport ||
+    flow.submitting;
+  usePreventRemove(preventRemove, () => undefined);
+  useEffect(() => {
+    if (preventRemove || submitNavigationAction === null) {
+      return;
+    }
+    // Give the guard update a frame to reach the parent sheet before navigating,
+    // just like the project-picker fallback below.
+    const frame = requestAnimationFrame(() => {
+      setSubmitNavigationAction(null);
+      (navigation.getParent() ?? navigation).dispatch(submitNavigationAction);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [navigation, preventRemove, submitNavigationAction]);
   const hasImportedIncomingShare = Boolean(
     props.incomingShareId &&
     flow.draftKey &&
@@ -379,7 +396,8 @@ export function NewTaskDraftScreen(props: {
     };
   }, [props.pendingTaskId, cancelEditingPendingTask]);
 
-  const foregroundColor = useUniwindTheme()["--color-foreground"];
+  const theme = useUniwindTheme();
+  const foregroundColor = theme["--color-foreground"];
   const regularFontFamily = useFontFamily("regular");
   const bodyText = useScaledTextRole("body");
 
@@ -887,7 +905,7 @@ export function NewTaskDraftScreen(props: {
           clearWorkspaceSelection: true,
         });
       }
-      navigation.getParent()?.goBack();
+      setSubmitNavigationAction(CommonActions.goBack());
       return;
     }
 
@@ -958,7 +976,7 @@ export function NewTaskDraftScreen(props: {
         clearWorkspaceSelection: true,
       });
     }
-    navigation.dispatch(
+    setSubmitNavigationAction(
       StackActions.replace("Thread", {
         environmentId: String(result.value.environmentId),
         threadId: String(result.value.threadId),
@@ -1109,31 +1127,50 @@ export function NewTaskDraftScreen(props: {
 
   const workspaceControls = (
     <View className="flex-row items-center gap-1 px-2">
-      <ComposerInlineControl
-        accessibilityHint={`Switches to ${flow.workspaceMode === "local" ? "a new worktree" : "the current checkout"}`}
-        accessibilityLabel={workspaceLabel}
-        disabled={isComposerInteractionLocked || voiceInput.isBusy}
-        iconNode={
-          <NewTaskWorkspaceIcon
-            workspaceMode={flow.workspaceMode}
-            worktreePath={flow.selectedWorktreePath}
+      {flow.submitting && environmentConnected && flow.workspaceMode === "worktree" ? (
+        <View
+          accessible
+          accessibilityLabel="Setting up worktree…"
+          className="h-11 w-full max-w-[260px] flex-row items-center px-2"
+        >
+          <ShimmeringWorkContent
+            icon="arrow.triangle.branch"
+            iconSubtleColor={theme["--color-icon-subtle"]}
+            label="Setting up worktree…"
+            showIcon
           />
-        }
-        label={workspaceLabel}
-        maxWidth={flow.workspaceMode === "local" ? 220 : 148}
-        onPress={() => flow.setWorkspaceMode(flow.workspaceMode === "local" ? "worktree" : "local")}
-        showChevron={false}
-      />
+        </View>
+      ) : (
+        <>
+          <ComposerInlineControl
+            accessibilityHint={`Switches to ${flow.workspaceMode === "local" ? "a new worktree" : "the current checkout"}`}
+            accessibilityLabel={workspaceLabel}
+            disabled={isComposerInteractionLocked || voiceInput.isBusy}
+            iconNode={
+              <NewTaskWorkspaceIcon
+                workspaceMode={flow.workspaceMode}
+                worktreePath={flow.selectedWorktreePath}
+              />
+            }
+            label={workspaceLabel}
+            maxWidth={flow.workspaceMode === "local" ? 220 : 148}
+            onPress={() =>
+              flow.setWorkspaceMode(flow.workspaceMode === "local" ? "worktree" : "local")
+            }
+            showChevron={false}
+          />
 
-      <ComposerInlineControl
-        accessibilityLabel={`${flow.workspaceMode === "worktree" ? "Base branch" : "Branch"}: ${selectedBranchLabel}`}
-        chevronDirection="right"
-        disabled={isComposerInteractionLocked}
-        icon="arrow.triangle.branch"
-        label={showBranchLoading ? "Loading branches…" : selectedBranchLabel}
-        maxWidth={190}
-        onPress={() => openContextPicker("NewTaskBranch")}
-      />
+          <ComposerInlineControl
+            accessibilityLabel={`${flow.workspaceMode === "worktree" ? "Base branch" : "Branch"}: ${selectedBranchLabel}`}
+            chevronDirection="right"
+            disabled={isComposerInteractionLocked}
+            icon="arrow.triangle.branch"
+            label={showBranchLoading ? "Loading branches…" : selectedBranchLabel}
+            maxWidth={190}
+            onPress={() => openContextPicker("NewTaskBranch")}
+          />
+        </>
+      )}
     </View>
   );
 
