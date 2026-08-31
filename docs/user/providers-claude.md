@@ -48,10 +48,12 @@ Claude can show its own resume prompt when you continue an old session.
 
 ## Where Claude Skills Are Loaded
 
-T3 Code looks for Claude skills in the Claude config directory's `skills` folder, then
-`<workspace>/.agents/skills`, then `<workspace>/.claude/skills`.
+T3 Code looks for Claude skills in the Claude config directory's `skills` folder and in
+`<workspace>/.claude/skills`.
 
-If the same skill name exists in more than one folder, the later folder wins.
+If the same skill name exists in both folders, the skill from the Claude config directory wins.
+Claude Code does not load skills directly from `<workspace>/.agents/skills`. A project can still
+keep its skill files there when `<workspace>/.claude/skills` is a symlink to that directory.
 
 ## I Want Work And Personal Claude Accounts
 
