@@ -59,7 +59,7 @@ export type ComposerCommandItem =
       description: string;
     };
 
-function getComposerCommandMenuMessage(input: {
+export function getComposerCommandMenuMessage(input: {
   readonly isLoading: boolean;
   readonly triggerKind: ComposerTriggerKind | null;
   readonly emptyStateText?: string;
