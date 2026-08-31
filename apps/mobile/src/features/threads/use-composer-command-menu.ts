@@ -18,7 +18,7 @@ import {
   normalizeSearchQuery,
   scoreQueryMatch,
 } from "@t3tools/shared/searchRanking";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { ComposerEditorSelection } from "../../components/ComposerEditor";
 import { useEnvironmentQuery } from "../../state/query";
@@ -29,9 +29,14 @@ import { matchesSlashSkillQuery } from "./composerSlashSkillSearch";
 
 const EMPTY_PROVIDER_SKILLS: ReadonlyArray<ServerProviderSkill> = [];
 
+export function composerSelectionAtEnd(draftMessage: string): ComposerEditorSelection {
+  return { start: draftMessage.length, end: draftMessage.length };
+}
+
 /** Shared autocomplete for thread composers and unsent new-task drafts. */
 export function useComposerCommandMenu({
   draftMessage,
+  ownerKey,
   environmentId,
   projectCwd,
   threadId,
@@ -42,6 +47,7 @@ export function useComposerCommandMenu({
   onUpdateInteractionMode,
 }: {
   readonly draftMessage: string;
+  readonly ownerKey: string | null;
   readonly environmentId: EnvironmentId | null;
   readonly projectCwd: string | null;
   readonly threadId: ThreadId | null;
@@ -54,10 +60,8 @@ export function useComposerCommandMenu({
   const hasThread = threadId !== null;
   const workspaceContext: ProviderWorkspaceContext | null =
     threadId === null ? (draftWorkspaceContext ?? null) : { _tag: "thread", threadId };
-  const [selection, setSelection] = useState(() => ({
-    start: draftMessage.length,
-    end: draftMessage.length,
-  }));
+  const [selection, setSelection] = useState(() => composerSelectionAtEnd(draftMessage));
+  const previousOwnerKeyRef = useRef(ownerKey);
   const onSelectionChange = useCallback((nextSelection: ComposerEditorSelection) => {
     setSelection(nextSelection);
   }, []);
@@ -72,6 +76,11 @@ export function useComposerCommandMenu({
       return { start, end: selectionEnd };
     });
   }, [draftMessage.length]);
+  useEffect(() => {
+    if (previousOwnerKeyRef.current === ownerKey) return;
+    previousOwnerKeyRef.current = ownerKey;
+    setSelection(composerSelectionAtEnd(draftMessage));
+  }, [draftMessage, ownerKey]);
 
   const trigger = useMemo(() => {
     if (!enabled || selection.start !== selection.end) {
