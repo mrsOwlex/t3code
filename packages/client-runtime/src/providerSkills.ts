@@ -1,4 +1,8 @@
-import type { ServerProviderSkill, ServerProviderSlashCommand } from "@t3tools/contracts";
+import type {
+  ProviderWorkspaceSkillsResult,
+  ServerProviderSkill,
+  ServerProviderSlashCommand,
+} from "@t3tools/contracts";
 
 export type ProviderSkillSourceKind = "app" | "repo" | "project" | "personal" | "system" | "other";
 
@@ -13,6 +17,27 @@ function titleCaseWords(value: string): string {
 
 function normalizePathSeparators(pathValue: string): string {
   return pathValue.replaceAll("\\", "/");
+}
+
+const EMPTY_PROVIDER_SKILLS: ReadonlyArray<ServerProviderSkill> = [];
+
+export function resolveProviderWorkspaceSkills(input: {
+  readonly requested: boolean;
+  readonly result: ProviderWorkspaceSkillsResult | null;
+  readonly requestFailed: boolean;
+  readonly snapshotSkills: ReadonlyArray<ServerProviderSkill>;
+}): ReadonlyArray<ServerProviderSkill> {
+  const snapshotSkills = input.snapshotSkills;
+  if (!input.requested) {
+    return snapshotSkills;
+  }
+  if (input.result !== null) {
+    return input.result.skills ?? snapshotSkills;
+  }
+  if (input.requestFailed) {
+    return snapshotSkills;
+  }
+  return EMPTY_PROVIDER_SKILLS;
 }
 
 export function formatProviderSkillDisplayName(

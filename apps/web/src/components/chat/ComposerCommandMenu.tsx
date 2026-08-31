@@ -58,6 +58,29 @@ export type ComposerCommandItem =
       description: string;
     };
 
+function getComposerCommandMenuMessage(input: {
+  readonly isLoading: boolean;
+  readonly triggerKind: ComposerTriggerKind | null;
+  readonly emptyStateText?: string;
+}): string {
+  if (input.isLoading) {
+    return input.triggerKind === "path"
+      ? "Searching workspace files..."
+      : "Searching workspace skills...";
+  }
+  if (input.emptyStateText !== undefined) {
+    return input.emptyStateText;
+  }
+  switch (input.triggerKind) {
+    case "skill":
+      return "No skills found. Try / to browse provider commands.";
+    case "path":
+      return "No matching files or folders.";
+    default:
+      return "No matching command.";
+  }
+}
+
 export const ComposerCommandMenu = memo(function ComposerCommandMenu(props: {
   items: ComposerCommandItem[];
   resolvedTheme: "light" | "dark";
@@ -77,6 +100,7 @@ export const ComposerCommandMenu = memo(function ComposerCommandMenu(props: {
     );
     el?.scrollIntoView({ block: "nearest" });
   }, [props.activeItemId]);
+  const menuMessage = getComposerCommandMenuMessage(props);
 
   return (
     <Command
@@ -111,18 +135,7 @@ export const ComposerCommandMenu = memo(function ComposerCommandMenu(props: {
           </CommandList>
         ) : (
           <div className="px-5 pt-3.5 pb-7">
-            <p className="text-secondary-label text-xs">
-              {props.isLoading
-                ? props.triggerKind === "path"
-                  ? "Searching workspace files..."
-                  : "Searching workspace skills..."
-                : (props.emptyStateText ??
-                  (props.triggerKind === "skill"
-                    ? "No skills found. Try / to browse provider commands."
-                    : props.triggerKind === "path"
-                      ? "No matching files or folders."
-                      : "No matching command."))}
-            </p>
+            <p className="text-secondary-label text-xs">{menuMessage}</p>
           </div>
         )}
       </div>

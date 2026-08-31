@@ -6,6 +6,7 @@ import type {
   ServerProviderSkill,
   ThreadId,
 } from "@t3tools/contracts";
+import { resolveProviderWorkspaceSkills } from "@t3tools/client-runtime/providerSkills";
 import {
   detectComposerTrigger,
   replaceTextRange,
@@ -105,20 +106,14 @@ export function useComposerCommandMenu({
       ? null
       : serverEnvironment.workspaceSkills(workspaceSkillsTarget),
   );
-  const providerSkills =
-    workspaceSkillsTarget === null
-      ? (selectedProviderStatus?.skills ?? EMPTY_PROVIDER_SKILLS)
-      : workspaceSkillsQuery.data === null
-        ? workspaceSkillsQuery.error === null
-          ? EMPTY_PROVIDER_SKILLS
-          : (selectedProviderStatus?.skills ?? EMPTY_PROVIDER_SKILLS)
-        : (workspaceSkillsQuery.data.skills ??
-          selectedProviderStatus?.skills ??
-          EMPTY_PROVIDER_SKILLS);
-  const editorSkills =
-    providerSkills.length > 0
-      ? providerSkills
-      : (selectedProviderStatus?.skills ?? EMPTY_PROVIDER_SKILLS);
+  const snapshotSkills = selectedProviderStatus?.skills ?? EMPTY_PROVIDER_SKILLS;
+  const providerSkills = resolveProviderWorkspaceSkills({
+    requested: workspaceSkillsTarget !== null,
+    result: workspaceSkillsQuery.data,
+    requestFailed: workspaceSkillsQuery.error !== null,
+    snapshotSkills,
+  });
+  const editorSkills = providerSkills.length > 0 ? providerSkills : snapshotSkills;
 
   const items = useMemo<ComposerCommandItem[]>(() => {
     if (!trigger) return [];

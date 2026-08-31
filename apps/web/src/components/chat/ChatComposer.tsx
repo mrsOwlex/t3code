@@ -291,6 +291,7 @@ import {
   formatProviderSkillDisplayName,
   getProviderSlashCommandsForSlashMenu,
   getProviderSkillsForSlashMenu,
+  resolveProviderWorkspaceSkills,
 } from "@t3tools/client-runtime/providerSkills";
 import { searchProviderSkills } from "../../providerSkillSearch";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
@@ -1272,20 +1273,14 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
       ? null
       : serverEnvironment.workspaceSkills(workspaceSkillsTarget),
   );
-  const providerSkills =
-    workspaceSkillsTarget === null
-      ? (selectedProviderStatus?.skills ?? EMPTY_PROVIDER_SKILLS)
-      : workspaceSkillsQuery.data === null
-        ? workspaceSkillsQuery.error === null
-          ? EMPTY_PROVIDER_SKILLS
-          : (selectedProviderStatus?.skills ?? EMPTY_PROVIDER_SKILLS)
-        : (workspaceSkillsQuery.data.skills ??
-          selectedProviderStatus?.skills ??
-          EMPTY_PROVIDER_SKILLS);
-  const composerEditorSkills =
-    providerSkills.length > 0
-      ? providerSkills
-      : (selectedProviderStatus?.skills ?? EMPTY_PROVIDER_SKILLS);
+  const snapshotSkills = selectedProviderStatus?.skills ?? EMPTY_PROVIDER_SKILLS;
+  const providerSkills = resolveProviderWorkspaceSkills({
+    requested: workspaceSkillsTarget !== null,
+    result: workspaceSkillsQuery.data,
+    requestFailed: workspaceSkillsQuery.error !== null,
+    snapshotSkills,
+  });
+  const composerEditorSkills = providerSkills.length > 0 ? providerSkills : snapshotSkills;
 
   const composerMenuItems = useMemo<ComposerCommandItem[]>(() => {
     if (!composerTrigger) return [];

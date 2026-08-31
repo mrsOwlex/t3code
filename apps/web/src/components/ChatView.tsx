@@ -1831,21 +1831,22 @@ function ChatViewContent(props: ChatViewProps) {
   );
   const activeProject = useProject(activeProjectRef);
   const draftWorktreePath = isServerThread ? null : (activeThread?.worktreePath ?? null);
-  const providerWorkspaceContext = useMemo<ProviderWorkspaceContext | null>(
-    () =>
-      isServerThread
-        ? { _tag: "thread", threadId }
-        : activeProject
-          ? draftWorktreePath !== null
-            ? {
-                _tag: "worktree",
-                projectId: activeProject.id,
-                worktreePath: draftWorktreePath,
-              }
-            : { _tag: "project", projectId: activeProject.id }
-          : null,
-    [activeProject?.id, draftWorktreePath, isServerThread, threadId],
-  );
+  const providerWorkspaceContext = useMemo<ProviderWorkspaceContext | null>(() => {
+    if (isServerThread) {
+      return { _tag: "thread", threadId };
+    }
+    if (!activeProject) {
+      return null;
+    }
+    if (draftWorktreePath !== null) {
+      return {
+        _tag: "worktree",
+        projectId: activeProject.id,
+        worktreePath: draftWorktreePath,
+      };
+    }
+    return { _tag: "project", projectId: activeProject.id };
+  }, [activeProject?.id, draftWorktreePath, isServerThread, threadId]);
   const handleNewThreadInActiveProject = useCallback(() => {
     startNewThreadForProject(activeProjectRef, handleNewThread);
   }, [activeProjectRef, handleNewThread]);

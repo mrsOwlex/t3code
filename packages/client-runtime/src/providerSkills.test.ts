@@ -5,7 +5,87 @@ import {
   getProviderSlashCommandsForSlashMenu,
   getProviderSkillsForSlashMenu,
   resolveProviderSkillSourceKind,
+  resolveProviderWorkspaceSkills,
 } from "./providerSkills.ts";
+
+const snapshotSkill = {
+  name: "personal-review",
+  path: "/Users/test/.agents/skills/personal-review/SKILL.md",
+  enabled: true,
+};
+const workspaceSkill = {
+  name: "project-review",
+  path: "/workspace/.agents/skills/project-review/SKILL.md",
+  enabled: true,
+};
+
+describe("resolveProviderWorkspaceSkills", () => {
+  it("keeps snapshot skills before workspace discovery is requested", () => {
+    expect(
+      resolveProviderWorkspaceSkills({
+        requested: false,
+        result: null,
+        requestFailed: false,
+        snapshotSkills: [snapshotSkill],
+      }),
+    ).toEqual([snapshotSkill]);
+  });
+
+  it("uses an empty list while workspace discovery is pending", () => {
+    expect(
+      resolveProviderWorkspaceSkills({
+        requested: true,
+        result: null,
+        requestFailed: false,
+        snapshotSkills: [snapshotSkill],
+      }),
+    ).toEqual([]);
+  });
+
+  it("falls back to snapshot skills when workspace discovery fails", () => {
+    expect(
+      resolveProviderWorkspaceSkills({
+        requested: true,
+        result: null,
+        requestFailed: true,
+        snapshotSkills: [snapshotSkill],
+      }),
+    ).toEqual([snapshotSkill]);
+  });
+
+  it("uses workspace skills when the provider returns them", () => {
+    expect(
+      resolveProviderWorkspaceSkills({
+        requested: true,
+        result: { skills: [workspaceSkill] },
+        requestFailed: false,
+        snapshotSkills: [snapshotSkill],
+      }),
+    ).toEqual([workspaceSkill]);
+  });
+
+  it("preserves an intentionally empty workspace result", () => {
+    expect(
+      resolveProviderWorkspaceSkills({
+        requested: true,
+        result: { skills: [] },
+        requestFailed: false,
+        snapshotSkills: [snapshotSkill],
+      }),
+    ).toEqual([]);
+  });
+
+  it("falls back when the provider does not support workspace discovery", () => {
+    expect(
+      resolveProviderWorkspaceSkills({
+        requested: true,
+        result: { skills: null },
+        requestFailed: false,
+        snapshotSkills: [snapshotSkill],
+      }),
+    ).toEqual([snapshotSkill]);
+  });
+});
 
 describe("formatProviderSkillDisplayName", () => {
   it("prefers the provider display name", () => {

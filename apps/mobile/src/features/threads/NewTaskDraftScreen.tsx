@@ -219,19 +219,19 @@ export function NewTaskDraftScreen(props: {
   const isIncomingShareTransferPending = Boolean(
     incomingShare && cancelledIncomingShareId !== props.incomingShareId,
   );
-  const providerWorkspaceContext = useMemo<ProviderWorkspaceContext | null>(
-    () =>
-      selectedProject === null
-        ? null
-        : flow.workspaceMode === "local" && flow.selectedWorktreePath !== null
-          ? {
-              _tag: "worktree",
-              projectId: selectedProject.id,
-              worktreePath: flow.selectedWorktreePath,
-            }
-          : { _tag: "project", projectId: selectedProject.id },
-    [flow.selectedWorktreePath, flow.workspaceMode, selectedProject?.id],
-  );
+  const providerWorkspaceContext = useMemo<ProviderWorkspaceContext | null>(() => {
+    if (selectedProject === null) {
+      return null;
+    }
+    if (flow.workspaceMode === "local" && flow.selectedWorktreePath !== null) {
+      return {
+        _tag: "worktree",
+        projectId: selectedProject.id,
+        worktreePath: flow.selectedWorktreePath,
+      };
+    }
+    return { _tag: "project", projectId: selectedProject.id };
+  }, [flow.selectedWorktreePath, flow.workspaceMode, selectedProject?.id]);
   const composerMenu = useComposerCommandMenu({
     draftMessage: flow.prompt,
     environmentId: selectedProject?.environmentId ?? null,
