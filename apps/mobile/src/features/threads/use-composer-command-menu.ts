@@ -4,6 +4,7 @@ import type {
   ProviderWorkspaceContext,
   ServerProvider,
   ServerProviderSkill,
+  ThreadId,
 } from "@t3tools/contracts";
 import {
   detectComposerTrigger,
@@ -32,9 +33,9 @@ export function useComposerCommandMenu({
   draftMessage,
   environmentId,
   projectCwd,
-  workspaceContext,
+  threadId,
+  workspaceContext: draftWorkspaceContext,
   selectedProviderStatus,
-  hasThread,
   enabled = true,
   onChangeDraftMessage,
   onUpdateInteractionMode,
@@ -42,13 +43,16 @@ export function useComposerCommandMenu({
   readonly draftMessage: string;
   readonly environmentId: EnvironmentId | null;
   readonly projectCwd: string | null;
-  readonly workspaceContext: ProviderWorkspaceContext | null;
+  readonly threadId: ThreadId | null;
+  readonly workspaceContext?: ProviderWorkspaceContext | null;
   readonly selectedProviderStatus: ServerProvider | null;
-  readonly hasThread: boolean;
   readonly enabled?: boolean;
   readonly onChangeDraftMessage: (value: string) => void;
   readonly onUpdateInteractionMode?: (mode: ProviderInteractionMode) => void;
 }) {
+  const hasThread = threadId !== null;
+  const workspaceContext: ProviderWorkspaceContext | null =
+    threadId === null ? (draftWorkspaceContext ?? null) : { _tag: "thread", threadId };
   const [selection, setSelection] = useState(() => ({
     start: draftMessage.length,
     end: draftMessage.length,

@@ -239,9 +239,9 @@ export function NewTaskDraftScreen(props: {
       (flow.workspaceMode === "worktree"
         ? selectedProject?.workspaceRoot
         : (flow.selectedWorktreePath ?? selectedProject?.workspaceRoot)) || null,
+    threadId: null,
     workspaceContext: providerWorkspaceContext,
     selectedProviderStatus: flow.selectedProviderStatus,
-    hasThread: false,
     enabled: isComposerFocused && !isIncomingShareTransferPending,
     onChangeDraftMessage: flow.setPrompt,
     onUpdateInteractionMode: flow.planModeEnabled ? flow.setInteractionMode : undefined,
