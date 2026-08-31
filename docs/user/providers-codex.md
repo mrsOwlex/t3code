@@ -40,13 +40,6 @@ The web and desktop Agents panel shows each sub-agent's model and reasoning effo
 reports them. If Codex does not report either value, T3 Code leaves it out instead of using the
 parent agent's settings.
 
-## Where Codex Skills Are Loaded
-
-The skill picker loads Codex skills for the active project. A new task targeting an existing
-worktree uses that worktree. Existing threads also use their worktree when one is present and
-otherwise fall back to the project root, so project-specific skills match the code the agent is
-working on.
-
 ## Approve access to other apps
 
 When a Codex tool needs access to an app such as Safari, T3 Code shows the app name and asks for
