@@ -33,10 +33,13 @@ import {
   ProviderDriverKind,
   type ProviderInstanceConfigMap,
   ProviderInstanceId,
+  ProviderWorkspaceSkillsError,
 } from "@t3tools/contracts";
 import * as DateTime from "effect/DateTime";
 import * as Effect from "effect/Effect";
+import * as FileSystem from "effect/FileSystem";
 import * as Layer from "effect/Layer";
+import * as PlatformError from "effect/PlatformError";
 import * as Stream from "effect/Stream";
 import { HttpClient, HttpClientResponse } from "effect/unstable/http";
 
@@ -317,6 +320,42 @@ describe("ProviderInstanceRegistryLive — all drivers slice", () => {
     Layer.provideMerge(TestHttpClientLive),
     Layer.provideMerge(Layer.succeed(ProviderEventLoggers, NoOpProviderEventLoggers)),
     Layer.provideMerge(ModelManifest.layerTest),
+  );
+
+  it.live("maps Claude skill root discovery failures to the provider contract", () =>
+    Effect.gen(function* () {
+      const fileSystem = yield* FileSystem.FileSystem;
+      const instanceId = ProviderInstanceId.make("claude_default");
+      const workspaceCwd = "/restricted/workspace";
+      const cause = PlatformError.systemError({
+        _tag: "PermissionDenied",
+        module: "FileSystem",
+        method: "readDirectory",
+        pathOrDescriptor: "/restricted/claude-home/skills",
+      });
+      const failingFileSystem = FileSystem.FileSystem.of({
+        ...fileSystem,
+        readDirectory: () => Effect.fail(cause),
+      });
+      const configMap: ProviderInstanceConfigMap = {
+        [instanceId]: {
+          driver: ProviderDriverKind.make("claudeAgent"),
+          enabled: false,
+          config: makeClaudeConfig({ homePath: "/restricted/claude-home" }),
+        },
+      };
+
+      const { registry } = yield* makeProviderInstanceRegistry({
+        drivers: [ClaudeDriver],
+        configMap,
+      }).pipe(Effect.provideService(FileSystem.FileSystem, failingFileSystem));
+      const instance = yield* registry.getInstance(instanceId);
+      const error = yield* instance!.loadWorkspaceSkills!(workspaceCwd).pipe(Effect.flip);
+
+      expect(error).toBeInstanceOf(ProviderWorkspaceSkillsError);
+      expect(error).toMatchObject({ instanceId, cwd: workspaceCwd });
+      expect(error.cause).toBe(cause);
+    }).pipe(Effect.provide(testLayer)),
   );
 
   it.live("boots one instance of every shipped driver from a single config map", () =>

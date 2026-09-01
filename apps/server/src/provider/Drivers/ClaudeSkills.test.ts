@@ -3,6 +3,7 @@ import { assert, it } from "@effect/vitest";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
 import * as Path from "effect/Path";
+import * as PlatformError from "effect/PlatformError";
 
 import { discoverClaudeSkills } from "./ClaudeSkills.ts";
 
@@ -251,6 +252,38 @@ it.layer(NodeServices.layer)("discoverClaudeSkills", (it) => {
       );
 
       assert.deepEqual(skills, []);
+    }),
+  );
+
+  it.effect("preserves non-missing root discovery failures", () =>
+    Effect.gen(function* () {
+      const fileSystem = yield* FileSystem.FileSystem;
+      const path = yield* Path.Path;
+      const tempDir = yield* fileSystem.makeTempDirectoryScoped({
+        prefix: "t3-claude-skills-",
+      });
+      const configDir = path.join(tempDir, "claude-home");
+      const skillsDir = path.join(configDir, "skills");
+      const cause = PlatformError.systemError({
+        _tag: "PermissionDenied",
+        module: "FileSystem",
+        method: "readDirectory",
+        pathOrDescriptor: skillsDir,
+      });
+      const failingFileSystem = FileSystem.FileSystem.of({
+        ...fileSystem,
+        readDirectory: (directory, options) =>
+          directory === skillsDir
+            ? Effect.fail(cause)
+            : fileSystem.readDirectory(directory, options),
+      });
+
+      const error = yield* discoverClaudeSkills({ homePath: configDir }, undefined).pipe(
+        Effect.provideService(FileSystem.FileSystem, failingFileSystem),
+        Effect.flip,
+      );
+
+      assert.strictEqual(error, cause);
     }),
   );
 });

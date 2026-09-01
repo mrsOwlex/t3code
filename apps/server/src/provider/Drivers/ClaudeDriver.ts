@@ -12,7 +12,12 @@
  *
  * @module provider/Drivers/ClaudeDriver
  */
-import { ClaudeSettings, ProviderDriverKind, type ServerProvider } from "@t3tools/contracts";
+import {
+  ClaudeSettings,
+  ProviderDriverKind,
+  ProviderWorkspaceSkillsError,
+  type ServerProvider,
+} from "@t3tools/contracts";
 import * as Cache from "effect/Cache";
 import * as Duration from "effect/Duration";
 import * as Crypto from "effect/Crypto";
@@ -224,6 +229,14 @@ export const ClaudeDriver: ProviderDriver<ClaudeSettings, ClaudeDriverEnv> = {
       );
       const loadWorkspaceSkills = (workspaceCwd: string) =>
         discoverClaudeSkills(effectiveConfig, workspaceCwd, processEnv).pipe(
+          Effect.mapError(
+            (cause) =>
+              new ProviderWorkspaceSkillsError({
+                instanceId,
+                cwd: workspaceCwd,
+                cause,
+              }),
+          ),
           Effect.provideService(FileSystem.FileSystem, fileSystem),
           Effect.provideService(Path.Path, path),
         );

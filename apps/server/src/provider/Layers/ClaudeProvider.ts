@@ -926,7 +926,14 @@ export const checkClaudeProviderStatus = Effect.fn("checkClaudeProviderStatus")(
   const capabilities = resolveCapabilities
     ? yield* resolveCapabilities(claudeSettings).pipe(Effect.orElseSucceed(() => undefined))
     : undefined;
-  const skills = yield* discoverClaudeSkills(claudeSettings, cwd, resolvedEnvironment);
+  const skills = yield* discoverClaudeSkills(claudeSettings, cwd, resolvedEnvironment).pipe(
+    Effect.tapError((error) =>
+      Effect.logWarning("Failed to discover Claude skills while checking provider status.", {
+        reason: error.reason._tag,
+      }),
+    ),
+    Effect.orElseSucceed(() => []),
+  );
   const slashCommands = [
     {
       name: "compact",
