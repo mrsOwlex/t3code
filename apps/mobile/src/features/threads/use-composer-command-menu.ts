@@ -6,7 +6,11 @@ import type {
   ServerProviderSkill,
   ThreadId,
 } from "@t3tools/contracts";
-import { resolveProviderWorkspaceSkills } from "@t3tools/client-runtime/providerSkills";
+import {
+  dedupeProviderSkillsByName,
+  getProviderSkillsForSlashMenu,
+  resolveProviderWorkspaceSkills,
+} from "@t3tools/client-runtime/providerSkills";
 import {
   detectComposerTrigger,
   replaceTextRange,
@@ -178,7 +182,7 @@ export function useComposerCommandMenu({
         });
       }
 
-      const skillItems = providerSkills
+      const skillItems = getProviderSkillsForSlashMenu(providerSkills, true)
         .filter((skill) => matchesSlashSkillQuery(skill, q))
         .map((skill) => ({
           id: `skill:${skill.name}`,
@@ -192,7 +196,9 @@ export function useComposerCommandMenu({
     }
 
     if (trigger.kind === "skill") {
-      const enabledSkills = providerSkills.filter((skill) => skill.enabled);
+      const enabledSkills = dedupeProviderSkillsByName(
+        providerSkills.filter((skill) => skill.enabled),
+      );
       const normalizedQuery = normalizeSearchQuery(trigger.query, {
         trimLeadingPattern: /^\$+/,
       });
