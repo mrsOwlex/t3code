@@ -6,6 +6,7 @@ import * as Ref from "effect/Ref";
 import * as Schema from "effect/Schema";
 import * as Semaphore from "effect/Semaphore";
 import type { ProviderInstanceId, SidebarProjectGroupingMode } from "@t3tools/contracts";
+import type { UsageLimitDisplayMode } from "@t3tools/contracts/settings";
 import type { ComposerEnterBehavior } from "../lib/composerEnterBehavior";
 import { MOBILE_THEME_IDS, type MobileThemeId, type MobileThemeMode } from "../lib/mobileTheme";
 import * as MobileDatabase from "./mobile-database";
@@ -16,6 +17,7 @@ const PREFERENCES_KEY = "t3code.preferences";
 const PREFERENCES_FALLBACK_KEY = "t3code.preferences.fallback";
 
 export interface Preferences {
+  readonly usageLimitDisplayMode?: UsageLimitDisplayMode;
   readonly liveActivitiesEnabled?: boolean;
   readonly themeId?: MobileThemeId;
   readonly lightThemeId?: MobileThemeId;
@@ -84,6 +86,7 @@ export class MobilePreferencesStore extends Context.Service<
 
 function sanitizePreferences(parsed: Preferences): Preferences {
   const preferences: {
+    usageLimitDisplayMode?: UsageLimitDisplayMode;
     liveActivitiesEnabled?: boolean;
     themeId?: MobileThemeId;
     lightThemeId?: MobileThemeId;
@@ -105,6 +108,9 @@ function sanitizePreferences(parsed: Preferences): Preferences {
     threadListSnoozedShelfExpanded?: boolean;
   } = {};
 
+  if (parsed.usageLimitDisplayMode === "remaining" || parsed.usageLimitDisplayMode === "used") {
+    preferences.usageLimitDisplayMode = parsed.usageLimitDisplayMode;
+  }
   if (typeof parsed.liveActivitiesEnabled === "boolean") {
     preferences.liveActivitiesEnabled = parsed.liveActivitiesEnabled;
   }

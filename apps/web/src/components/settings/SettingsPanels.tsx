@@ -540,6 +540,9 @@ export function useSettingsRestore(onRestored?: () => void) {
         ? ["Diff colors"]
         : []),
       ...(settings.chatWidth !== DEFAULT_UNIFIED_SETTINGS.chatWidth ? ["Chat width"] : []),
+      ...(settings.usageLimitDisplayMode !== DEFAULT_UNIFIED_SETTINGS.usageLimitDisplayMode
+        ? ["Limit display"]
+        : []),
       ...(settings.panelAnimationDurationMs !== DEFAULT_UNIFIED_SETTINGS.panelAnimationDurationMs
         ? ["Panel animations"]
         : []),
@@ -650,6 +653,7 @@ export function useSettingsRestore(onRestored?: () => void) {
       settings.appearanceContrast,
       settings.diffColorScheme,
       settings.chatWidth,
+      settings.usageLimitDisplayMode,
       settings.enableAgentBrowserAccess,
       settings.confirmQuit,
       settings.confirmThreadArchive,
@@ -762,6 +766,7 @@ export function useSettingsRestore(onRestored?: () => void) {
       appearanceContrast: DEFAULT_UNIFIED_SETTINGS.appearanceContrast,
       diffColorScheme: DEFAULT_UNIFIED_SETTINGS.diffColorScheme,
       chatWidth: DEFAULT_UNIFIED_SETTINGS.chatWidth,
+      usageLimitDisplayMode: DEFAULT_UNIFIED_SETTINGS.usageLimitDisplayMode,
       timestampFormat: DEFAULT_UNIFIED_SETTINGS.timestampFormat,
       notificationMode: DEFAULT_UNIFIED_SETTINGS.notificationMode,
       inAppNotificationsEnabled: DEFAULT_UNIFIED_SETTINGS.inAppNotificationsEnabled,
@@ -1420,6 +1425,43 @@ export function AppearanceSettingsPanel() {
                   <SelectItem value="comfortable">Comfortable (default)</SelectItem>
                   <SelectItem value="wide">Wide</SelectItem>
                   <SelectItem value="full">Full</SelectItem>
+                </SelectPopup>
+              </Select>
+            </div>
+          }
+        />
+        <SettingsRow
+          {...searchableSetting("usage-limit-display-mode")}
+          description="Show remaining or used quota in the app. Saved on this client."
+          resetAction={
+            settings.usageLimitDisplayMode !== DEFAULT_UNIFIED_SETTINGS.usageLimitDisplayMode ? (
+              <SettingResetButton
+                label="limit display"
+                onClick={() =>
+                  updateSettings({
+                    usageLimitDisplayMode: DEFAULT_UNIFIED_SETTINGS.usageLimitDisplayMode,
+                  })
+                }
+              />
+            ) : null
+          }
+          control={
+            <div className="w-full sm:w-40">
+              <Select
+                value={settings.usageLimitDisplayMode}
+                onValueChange={(value) => {
+                  if (value === "remaining" || value === "used")
+                    updateSettings({ usageLimitDisplayMode: value });
+                }}
+              >
+                <SelectTrigger size="sm" aria-label="Limit display">
+                  <SelectValue>
+                    {settings.usageLimitDisplayMode === "used" ? "Used" : "Remaining"}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectPopup align="end" alignItemWithTrigger={false}>
+                  <SelectItem value="remaining">Remaining (default)</SelectItem>
+                  <SelectItem value="used">Used</SelectItem>
                 </SelectPopup>
               </Select>
             </div>
