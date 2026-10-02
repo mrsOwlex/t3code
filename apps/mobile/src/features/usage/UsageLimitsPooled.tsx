@@ -72,6 +72,7 @@ function AccountSegment({
   );
 }
 
+/** Summarize one pooled window and open its account details from the segments or legend. */
 function PoolWindowCard({
   pool,
   color,

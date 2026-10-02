@@ -84,6 +84,7 @@ export class MobilePreferencesStore extends Context.Service<
   }
 >()("@t3tools/mobile/persistence/MobilePreferencesStore") {}
 
+/** Keep supported stored preferences; omitted or invalid values fall back to each consumer's defaults. */
 function sanitizePreferences(parsed: Preferences): Preferences {
   const preferences: {
     usageLimitDisplayMode?: UsageLimitDisplayMode;

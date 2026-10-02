@@ -508,6 +508,7 @@ function AboutVersionSection() {
   );
 }
 
+/** List changed settings for confirmation, then restore theme and scoped preferences to their defaults. */
 export function useSettingsRestore(onRestored?: () => void) {
   const {
     theme,

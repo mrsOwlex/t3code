@@ -4,6 +4,7 @@ import { AsyncResult } from "effect/unstable/reactivity";
 
 import { mobilePreferencesAtom } from "../../state/preferences";
 
+/** Read this client's display direction, using the shared default until preferences are available. */
 export function useUsageLimitDisplayMode() {
   const preferences = useAtomValue(mobilePreferencesAtom);
   return (
